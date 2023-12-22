@@ -1,0 +1,8 @@
+dbt_vr:
+  target: dev
+  outputs:
+    dev:
+      type: duckdb
+      # Replace some path with the actual path to your project
+      path: "../data/warehouse/vr.duckdb"
+      schema: medallion  
