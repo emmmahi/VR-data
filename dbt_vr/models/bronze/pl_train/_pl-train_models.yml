@@ -1,0 +1,31 @@
+version: 2
+
+sources:
+  - name: polars_traintest
+    schema: medallion_bronze
+    description: >
+      Raw data from one day. 
+    tables: 
+    - name: method_b_traintest
+      describtion: A source pointing to a table written by polars. 
+      columns: 
+        - name: route_sk
+          describtion: Primary key (surrogate)
+          data_type: STRING
+          tests:
+            - unique
+            - not_null
+        - name: trainNumber
+        - name: departureDate
+        - name: operatorUICCode
+        - name: operatorShortCode
+        - name: trainType
+        - name: trainCategory
+        - name: commuterLineID
+        - name: runningCurrently
+        - name: cancelled
+        - name: deleted
+        - name: version
+        - name: timetableType
+        - name: timetableAcceptanceDate
+        - name: timeTableRows
