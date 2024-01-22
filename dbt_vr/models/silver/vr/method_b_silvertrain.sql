@@ -1,0 +1,72 @@
+WITH exploded AS (
+    SELECT 
+        route_sk,
+        UNNEST(timeTableRows) as timetable_row
+    FROM {{source('polars_traintest', 'method_b_traintest') }}
+),
+
+defined AS (
+        SELECT 
+        route_sk,
+        timetable_row::STRUCT(
+            stationShortCode STRING,
+            stationUICCode INT,
+            countryCode STRING,
+            type STRING,
+            trainStopping BOOL,
+            commercialStop BOOL,
+            commercialTrack STRING, 
+            cancelled BOOLEAN,
+            scheduledTime STRING,
+            liveEstimateTime STRING,
+            estimateSource STRING,
+            unknownDelay BOOLEAN, 
+            actualTime STRING,
+            differenceInMinutes INT,
+            causes STRUCT(
+                passengerTerm STRING, 
+                categoryCode STRING, 
+                categoryName STRING, 
+                validFrom STRING,
+                validTo STRING, 
+                id INT, 
+                detailedCategoryCode STRING, 
+                detailedCategoryName STRING,
+                thirdCategoryCode STRING, 
+                thirdCategoryName STRING, 
+                description STRING,
+                categoryCodeId INT, 
+                detailedCategoryCodeId INT, 
+                thirdCategoryCodeId INT)[],
+            trainReady STRUCT(
+                source STRING,
+                accepted BOOL,
+                timestamp STRING)[]
+        ) as timetable_struct
+    FROM exploded
+),
+    
+flattened AS(
+    SELECT 
+        md5(route_sk || timetable_struct.stationShortCode || timetable_struct.stationUICCode) as stop_sk,
+        route_sk, 
+        timetable_struct.*
+    FROM defined
+)
+
+SELECT    
+    stop_sk,    
+    FIRST(stationShortCode),    
+    FIRST(stationUICCode) as station_id,      
+    FIRST(stationShortCode) as station_name,
+    MAX(CASE WHEN type = 'ARRIVAL' THEN differenceInMinutes END) AS arrival_lateness, 
+    MAX(CASE WHEN type = 'DEPARTURE' THEN differenceInMinutes END) AS departure_lateness,
+    FIRST(CASE WHEN type = 'ARRIVAL' THEN scheduledTime END) AS arrival_schedule,    
+    FIRST(CASE WHEN type = 'DEPARTURE' THEN scheduledTime END) AS departure_schedule,    
+    MAX(CASE WHEN type = 'ARRIVAL' THEN actualTime END) AS arrival_actual,    
+    MAX(CASE WHEN type = 'DEPARTURE' THEN actualTime END) AS departure_actual,
+    FLATTEN(LIST(causes)) as lateness_causes
+FROM flattened
+GROUP BY stop_sk
+
+

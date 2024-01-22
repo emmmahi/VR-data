@@ -4,3 +4,5 @@ dbt-duckdb==1.7.*   #itse engine
 ipykernel
 polars==0.19.*      # Polars ("pandas" tyylinen)
 pyarrow==14.0.*     # Apache Arrow (Yleensä: JavaScript => JSON=> Node.js, tämä tekee JavaScript <=> Node.js)
+matplotlib
+pandas
